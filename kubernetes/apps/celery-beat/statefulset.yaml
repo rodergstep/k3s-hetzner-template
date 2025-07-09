@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: celery-beat
+spec:
+  serviceName: "celery-beat"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-beat
+  template:
+    metadata:
+      labels:
+        app: celery-beat
+    spec:
+      containers:
+      - name: celery-beat
+        image: your-docker-image/django-app:latest
+        command: ["celery", "-A", "your_project_name", "beat", "-l", "info"]
+        envFrom:
+        - secretRef:
+            name: django-secrets

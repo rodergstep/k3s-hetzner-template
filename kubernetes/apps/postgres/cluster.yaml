@@ -1,0 +1,24 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-db
+  namespace: default # Or your preferred application namespace
+spec:
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+
+  storage:
+    size: 1Gi # Adjust as needed
+
+  postgresql:
+    # You can specify any major version of PostgreSQL
+    major: 17
+
+  # The operator will automatically create a secret with this name
+  # containing the connection details.
+  bootstrap:
+    initdb:
+      database: your_db_name
+      owner: your_db_user
+      secret:
+        name: postgres-db-superuser
