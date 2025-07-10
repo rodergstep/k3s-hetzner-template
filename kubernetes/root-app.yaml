@@ -6,8 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-repo/k3s-infra.git
-    path: kubernetes/argocd
+    repoURL: your-repo-url # This will be replaced by kustomize
+    path: kubernetes/apps
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

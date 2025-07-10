@@ -1,11 +1,29 @@
-hcloud_token = "YOUR_HETZNER_CLOUD_API_TOKEN"
-region       = "nbg1"
+# Example Terraform Variables
+# Copy this file to `terraform.tfvars` and fill in your details.
 
+# Hetzner Cloud API Token
+hcloud_token = "YOUR_HETZNER_TOKEN"
+
+# Server Configuration
 master_server_type = "cpx11"
-worker_server_type = "cpx31"
-worker_count       = 2
 
+worker_node_pools = [
+  {
+    name           = "small-static"
+    instance_type  = "cpx11"
+    instance_count = 4
+    location       = "nbg1"
+  },
+  {
+    name           = "medium-autoscaled"
+    instance_type  = "cpx21"
+    instance_count = 0 # Start with 0, scale up as needed (if using a cluster autoscaler)
+    location       = "nbg1"
+  }
+]
+
+# SSH Key
 ssh_key_name        = "my-ssh-key"
-ssh_public_key_path = "~/.ssh/id_rsa.pub"
 
-local_ip = "YOUR_LOCAL_IP_ADDRESS" # Your IP address for firewall access
+# Firewall - Your local IP for SSH access
+local_ip_for_ssh = "YOUR_LOCAL_IP/32"

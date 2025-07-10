@@ -1,4 +1,9 @@
-# Terraform
+# Kustomize overlays for different environments
+kubernetes/overlays
+
+# Terraform state and variables
+*.tfvars.json
+.terraform.lock.hcl
 .terraform
 *.tfstate
 *.tfstate.backup

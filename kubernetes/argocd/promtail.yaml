@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://grafana.github.io/helm-charts
     chart: promtail
-    targetRevision: 6.15.5 # Use a specific, stable version
+    targetRevision: 6.17.0 # Use a specific, stable version
     helm:
       parameters:
       - name: config.clients[0].url

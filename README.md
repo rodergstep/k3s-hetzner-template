@@ -4,21 +4,21 @@ This project provides a complete Infrastructure as Code (IaC) solution for deplo
 
 ## Core Components
 
-| Component                 | Version        | Description                                                                 |
-| ------------------------- | -------------- | --------------------------------------------------------------------------- |
-| Terraform hcloud Provider | `1.51.0`       | Manages the underlying cloud infrastructure on Hetzner Cloud.               |
-| k3s                       | `v1.32.6+k3s1` | A lightweight, production-ready Kubernetes distribution.                    |
-| ArgoCD                    | `stable`       | A declarative, GitOps continuous delivery tool for Kubernetes.              |
-| cert-manager              | `v1.18.2`      | Automates the management and issuance of TLS certificates.                  |
-| cloudnative-pg            | `0.24.0`       | A Kubernetes operator for PostgreSQL, providing a highly available database. |
-| hcloud-ccm                | `v1.24.0`      | The Hetzner Cloud Controller Manager, integrating the cluster with the cloud. |
-| hcloud-csi                | `v2.16.0`      | The Hetzner CSI driver, providing persistent storage for the cluster.       |
-| ingress-nginx             | `4.13.0`       | An Ingress controller for Kubernetes using NGINX as a reverse proxy.        |
-| kube-prometheus-stack     | `75.9.0`       | A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules. |
-| sealed-secrets            | `2.17.3`       | A Kubernetes controller and tool for one-way encrypted Secrets.             |
-| Cluster Autoscaler        | `9.36.0`       | Automatically adjusts the size of the Kubernetes cluster.                   |
-| Loki                      | `6.6.1`        | A horizontally-scalable, highly-available, multi-tenant log aggregation system. |
-| Promtail                  | `6.15.5`       | An agent which ships the contents of local logs to a private Loki instance. |
+| Component                 | Version         | Description                                                                 |
+| ------------------------- | --------------- | --------------------------------------------------------------------------- |
+| Terraform hcloud Provider | `1.51.0`        | Manages the underlying cloud infrastructure on Hetzner Cloud.               |
+| k3s                       | `v1.32.6+k3s1`  | A lightweight, production-ready Kubernetes distribution.                    |
+| ArgoCD                    | `stable`        | A declarative, GitOps continuous delivery tool for Kubernetes.              |
+| cert-manager              | `v1.18.2`       | Automates the management and issuance of TLS certificates.                  |
+| cloudnative-pg            | `0.24.0`        | A Kubernetes operator for PostgreSQL, providing a highly available database. |
+| hcloud-ccm                | `v1.26.0`       | The Hetzner Cloud Controller Manager, integrating the cluster with the cloud. |
+| hcloud-csi                | `v2.16.0`       | The Hetzner CSI driver, providing persistent storage for the cluster.       |
+| ingress-nginx             | `4.13.0`        | An Ingress controller for Kubernetes using NGINX as a reverse proxy.        |
+| kube-prometheus-stack     | `75.9.0`        | A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules. |
+| sealed-secrets            | `2.17.3`        | A Kubernetes controller and tool for one-way encrypted Secrets.             |
+| Cluster Autoscaler        | `9.47.0`        | Automatically adjusts the size of the Kubernetes cluster.                   |
+| Loki                      | `6.31.0`        | A horizontally-scalable, highly-available, multi-tenant log aggregation system. |
+| Promtail                  | `6.17.0`        | An agent which ships the contents of local logs to a private Loki instance. |
 
 ## Prerequisites
 
@@ -31,7 +31,7 @@ This project provides a complete Infrastructure as Code (IaC) solution for deplo
 - A Git repository to store your Kubernetes manifests.
 - Docker with `buildx` enabled (this is default on modern Docker Desktop).
 
-## 1. Setup
+## 1. Initial Setup
 
 1.  **Clone this repository.**
 
@@ -40,77 +40,93 @@ This project provides a complete Infrastructure as Code (IaC) solution for deplo
     - Create a new project in the Hetzner Cloud console.
     - Generate an API token and save it securely.
 
-3.  **Configure Terraform:**
-
-    - Navigate to the `terraform` directory.
-    - Create a `terraform.tfvars` file by copying the example:
-      ```bash
-      cp terraform.tfvars.example terraform.tfvars
-      ```
-    - Edit `terraform/terraform.tfvars` and fill in your details. This file includes your Hetzner token, desired server types, SSH key information, and your local IP for firewall access.
-
-4.  **Configure Ansible:**
+3.  **Configure Ansible:**
 
     - Make sure the dynamic inventory script is executable:
       ```bash
       chmod +x ansible/inventory.tf.py
       ```
 
-5.  **Configure Kubernetes Manifests:**
-    - The Kubernetes manifests are now managed by Kustomize to make configuration easier and less error-prone. Instead of editing individual files, you will update the `kustomization.yaml` files.
-    - **Root Application:** In `kubernetes/kustomization.yaml`, `root-app.yaml`, replace the placeholder Git repository URL (`https://github.com/your-repo/k3s-infra.git`) with your own.
-    - **Django Application:** In `kubernetes/apps/django/kustomization.yaml`, replace the placeholder Docker image and domain name with your own. Update the `kubernetes/apps/django/configmap.yaml` with your project's settings.
-    - In `kubernetes/apps/postgres/cluster.yaml`, replace `your_db_name` and `your_db_user` with your desired database name and user.
+## 2. Infrastructure Setup (Terraform Workspaces)
 
-## 2. Building Your Docker Images (For Mac M1/M2/M3 Users)
+This project uses Terraform Workspaces to manage separate, parallel infrastructure for your `staging` and `production` environments. This ensures that your testing environment is completely isolated from your production environment.
 
-Because your local machine (ARM64) has a different architecture than your Hetzner servers (AMD64), you must create multi-platform Docker images. You will also need two separate images: one for your Django application and one for the Nginx static server.
+### First-Time Setup
 
-1.  **Build the Django App Image:**
-
+1.  **Navigate to the `terraform` directory:**
     ```bash
-    docker buildx build --platform linux/amd64,linux/arm64 -t your-docker-hub-username/django-app:latest -f src/Dockerfile.django --push .
+    cd terraform
     ```
 
-2.  **Build the Nginx Static Image:**
+2.  **Initialize Terraform:**
     ```bash
-    docker buildx build --platform linux/amd64,linux/arm64 -t your-docker-hub-username/nginx-static:latest -f src/Dockerfile.nginx --push .
+    terraform init
     ```
 
-**IMPORTANT NOTES:**
+3.  **Create the Workspaces:**
+    ```bash
+    terraform workspace new staging
+    terraform workspace new production
+    ```
 
-- Replace `your-docker-hub-username/django-app:latest` and `your-docker-hub-username/nginx-static:latest` with your actual image names.
-- The `--push` flag is required for multi-platform builds. It builds and pushes the image to your container registry at the same time.
-- You must be logged into your Docker registry (`docker login`) before running these commands.
+### Deploying an Environment
 
-## 3. Deployment
+When you want to deploy or make changes to an environment, you must select the correct workspace first.
 
-1.  **Provision Infrastructure:**
-
-    - Navigate to the `terraform` directory and run:
+1.  **Select the Workspace:**
+    - For staging:
       ```bash
-      terraform init
-      terraform apply
+      terraform workspace select staging
+      ```
+    - For production:
+      ```bash
+      terraform workspace select production
       ```
 
-2.  **Install k3s:**
+2.  **Create a `.tfvars` file for the environment:**
+    - For staging, copy the `staging.tfvars` example:
+      ```bash
+      cp staging.tfvars.example staging.tfvars
+      ```
+    - For production, copy the `production.tfvars` example:
+      ```bash
+      cp production.tfvars.example production.tfvars
+      ```
+    - **Edit the `.tfvars` file** and fill in your details (Hetzner token, SSH key, etc.).
 
-    - Navigate to the `ansible` directory and run the playbook. This will install k3s on the master node using the `k3s` role and then join the workers to the cluster.
+3.  **Apply the Configuration:**
+    - **IMPORTANT:** You must tell Terraform which variables file to use for the selected workspace.
+    - For staging:
       ```bash
-      ansible-playbook -i inventory.tf.py playbook.yml
+      terraform apply -var-file="staging.tfvars"
+      ```
+    - For production:
+      ```bash
+      terraform apply -var-file="production.tfvars"
       ```
 
-3.  **Setup GitOps with Argo CD:**
-    - **Install Argo CD:**
-      ```bash
-      kubectl create namespace argocd
-      kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-      ```
-    - **Push your Kubernetes manifests to your Git repository.**
-    - **Bootstrap the infrastructure:**
-      ```bash
-      kubectl apply -k kubernetes/
-      ```
+This workflow ensures that you are always applying the correct configuration to the correct environment.
+
+## 3. Deployment Workflow (GitOps with Argo CD)
+
+This project uses a GitOps workflow with a staging and production environment. This allows you to test changes in a safe environment before deploying them to production.
+
+### Automated Staging Deployment
+
+1.  **Push Code:** When you push a code change to the `main` branch, the GitHub Actions CI pipeline is triggered.
+2.  **Build and Push:** The CI pipeline builds new Docker images and tags them with the Git commit SHA.
+3.  **Update Staging Manifest:** The CI pipeline then automatically commits an update to the `kubernetes/overlays/staging/kustomization.yaml` file, changing the `newTag` to the new Git commit SHA.
+4.  **Argo CD Deploys:** Argo CD detects the change in the Git repository and automatically deploys the new image to the `staging` environment.
+
+### Manual Production Deployment (Promotion)
+
+Deploying to production is a manual, deliberate step. This ensures that only tested and approved changes are released to your users.
+
+1.  **Verify in Staging:** After the automated deployment to `staging`, thoroughly test your application to ensure it is working as expected.
+2.  **Promote to Production:** Once you are confident that the new version is stable, you can promote it to production by manually updating the `kubernetes/overlays/production/kustomization.yaml` file.
+    - Change the `newTag` for the images to the Git commit SHA of the version you have tested in staging.
+    - Commit and push this change to the `main` branch.
+3.  **Argo CD Deploys:** Argo CD will detect the change and deploy the new version to the `production` environment.
 
 ## 4. Managing Secrets with Sealed Secrets
 
@@ -150,7 +166,7 @@ kubeseal --cert pub-sealed-secrets.pem --format=yaml < local-secret.yaml > seale
 This project requires the following secrets to be created:
 
 1.  **Django Application Secrets (`django-secrets`):**
-    - Contains the Django `SECRET_KEY`, `ALLOWED_HOSTS`, and any other sensitive application settings.
+    - Contains the Django `SECRET_KEY` and any other sensitive application settings. The `ALLOWED_HOSTS` should be configured via the Kustomize overlay, not here.
     - **Target file:** `kubernetes/apps/django/sealed-secret.yaml`
     - **Example `local-secret.yaml`:**
       ```yaml
@@ -161,7 +177,7 @@ This project requires the following secrets to be created:
         namespace: default
       stringData:
         SECRET_KEY: "your-super-long-and-random-secret-key"
-        ALLOWED_HOSTS: "your-domain.com,www.your-domain.com"
+        # Note: ALLOWED_HOSTS is managed in your production overlay, not here.
       ```
 
 2.  **PostgreSQL Backup Credentials (`postgres-backup-credentials`):**
@@ -210,6 +226,27 @@ The `cloudnative-pg` operator is configured to perform daily backups to a Hetzne
 1.  Update the `data` section in `kubernetes/apps/postgres/backup-configmap.yaml` with your Storage Box endpoint and desired S3 bucket path.
 2.  Create a `SealedSecret` named `postgres-backup-credentials` in the `default` namespace containing your Storage Box username and password as the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively.
 
+## 6. Configuring Your Application (Kustomize Overlays)
+
+This project uses Kustomize to manage Kubernetes manifests, separating the base configuration from environment-specific settings. This is a best practice that prevents sensitive information from being committed to Git.
+
+### How it Works
+
+- **Base Configuration (`kubernetes/apps/`):** This directory contains the generic, non-sensitive Kubernetes manifests for your applications (Django, Celery, etc.). This `base` is safe to commit to your Git repository.
+- **Overlays (`kubernetes/overlays/`):** This directory is where you will store your environment-specific configurations. Each overlay contains a `kustomization.yaml` that specifies how to patch the `base` configuration.
+- **Name Suffixes:** Each overlay uses a `nameSuffix` (e.g., `-staging`, `-production`) to automatically rename all resources. This is the key to creating truly separate deployments for each environment.
+- **`.gitignore`:** The `kubernetes/overlays` directory is listed in the `.gitignore` file. **This is the most important part.** It ensures that your sensitive production configuration is never accidentally committed to your Git repository.
+
+### Configuration Steps
+
+1.  **Configure the Base:**
+    - **Root Application:** In `kubernetes/kustomization.yaml`, replace the placeholder Git repository URL (`https://github.com/your-repo/k3s-infra.git`) with your own.
+    - **ConfigMaps:** Review and update any `ConfigMap` files (e.g., `kubernetes/apps/django/configmap.yaml`) with your application's non-sensitive settings.
+
+2.  **Configure the Overlays:**
+    - **Production:** Navigate to `kubernetes/overlays/production/kustomization.yaml` and replace the placeholder values for your domain, TLS secret, and Docker image tags.
+    - **Staging:** Navigate to `kubernetes/overlays/staging/kustomization.yaml` and replace the placeholder values for your domain, TLS secret, and Docker image tags. This overlay is also configured to use a separate database and Redis instance.
+
 ## 7. Security
 
 This project is configured with several security best practices:
@@ -229,7 +266,7 @@ For a web browser to be able to access your `/graphql` or other API endpoints fr
     - Add `django-cors-headers` to your `requirements.txt` file.
 
 2.  **Update `settings.py`:**
-    - Add `corsheaders` to your `INSTALLED_APPS`:
+    - Add `corsheaders` to your `INSTALLED_APPS`:`
       ```python
       INSTALLED_APPS = [
           ...

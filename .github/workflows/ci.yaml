@@ -31,7 +31,7 @@ jobs:
           file: ./src/Dockerfile.django
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: your-docker-hub-username/django-app:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/django-app:${{ github.sha }}
 
       - name: Build and push Nginx image
         uses: docker/build-push-action@v4
@@ -40,4 +40,13 @@ jobs:
           file: ./src/Dockerfile.nginx
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: your-docker-hub-username/nginx-static:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/nginx-static:${{ github.sha }}
+
+      - name: Update Kustomize image tag
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          sed -i "s|newTag:.*|newTag: ${{ github.sha }}|" kubernetes/overlays/staging/kustomization.yaml
+          git add kubernetes/overlays/staging/kustomization.yaml
+          git commit -m "ci: Update staging image to ${{ github.sha }}"
+          git push

@@ -75,11 +75,14 @@ resource "hcloud_placement_group" "worker_placement_group" {
 
 # Create k3s worker nodes
 resource "hcloud_server" "worker" {
-  count       = var.worker_count
-  name        = "k3s-worker-${count.index}"
-  server_type = var.worker_server_type
+  for_each = { for pool in var.worker_node_pools : pool.name => pool }
+
+  name        = "k3s-worker-${each.key}-${count.index}"
+  server_type = each.value.instance_type
   image       = "ubuntu-22.04"
-  location    = var.region
+  location    = each.value.location
+  count       = each.value.instance_count
+
   ssh_keys    = [hcloud_ssh_key.default.name]
   placement_group_id = hcloud_placement_group.worker_placement_group.id
   network {

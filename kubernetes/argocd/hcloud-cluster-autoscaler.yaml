@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://kubernetes.github.io/autoscaler
     chart: cluster-autoscaler
-    targetRevision: 9.36.0 # Use a specific, stable version
+    targetRevision: 9.47.0 # Use a specific, stable version
     helm:
       parameters:
       - name: autoDiscovery.clusterName
