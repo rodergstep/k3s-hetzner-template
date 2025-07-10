@@ -12,6 +12,8 @@ spec:
       labels:
         app: celery-worker
     spec:
+      nodeSelector:
+        "pool": "small-static"
       containers:
       - name: celery-worker
         image: your-docker-image/django-app:latest

@@ -83,6 +83,10 @@ resource "hcloud_server" "worker" {
   location    = each.value.location
   count       = each.value.instance_count
 
+  labels = {
+    "pool" = each.key
+  }
+
   ssh_keys    = [hcloud_ssh_key.default.name]
   placement_group_id = hcloud_placement_group.worker_placement_group.id
   network {
