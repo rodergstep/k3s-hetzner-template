@@ -2,4 +2,15 @@
 - hosts: master
   become: yes
   roles:
-    - role: k3s
+    - k3s
+  post_tasks:
+    - name: Get k3s join token
+      shell: "cat /var/lib/rancher/k3s/server/node-token"
+      register: k3s_join_token
+      changed_when: false
+
+- hosts: workers
+  become: yes
+  tasks:
+    - name: Install k3s on workers
+      shell: "curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars[groups['master'][0]]['ansible_host'] }}:6443 K3S_TOKEN={{ hostvars[groups['master'][0]]['k3s_join_token'].stdout }} sh -s - --node-ip={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --flannel-iface=eth1"

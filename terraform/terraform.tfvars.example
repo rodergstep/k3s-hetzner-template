@@ -1,0 +1,11 @@
+hcloud_token = "YOUR_HETZNER_CLOUD_API_TOKEN"
+region       = "nbg1"
+
+master_server_type = "cpx11"
+worker_server_type = "cpx31"
+worker_count       = 2
+
+ssh_key_name        = "my-ssh-key"
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+
+local_ip = "YOUR_LOCAL_IP_ADDRESS" # Your IP address for firewall access

@@ -1,6 +1,6 @@
 ---
 - name: Install k3s
-  shell: "curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --disable=traefik --disable=servicelb --node-external-ip={{ hostvars[inventory_hostname]['ansible_host'] }} --kube-apiserver-arg=--cloud-provider=external"
+  shell: "curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --disable=traefik --disable=servicelb --node-ip={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --node-external-ip={{ hostvars[inventory_hostname]['ansible_host'] }} --flannel-iface=eth1 --kube-apiserver-arg=--cloud-provider=external"
 
 - name: Create .kube directory
   file:
@@ -18,3 +18,17 @@
     owner: root
     group: root
     mode: 0644
+
+- name: Install System Upgrade Controller
+  shell: "kubectl apply -f https://github.com/rancher/system-upgrade-controller/releases/download/v0.13.4/system-upgrade-controller.yaml"
+
+- name: Copy upgrade plan
+  copy:
+    src: upgrade_plan.yaml
+    dest: /root/upgrade_plan.yaml
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Apply upgrade plan
+  shell: "kubectl apply -f /root/upgrade_plan.yaml"

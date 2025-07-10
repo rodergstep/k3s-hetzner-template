@@ -16,7 +16,18 @@ spec:
       containers:
       - name: celery-beat
         image: your-docker-image/django-app:latest
-        command: ["celery", "-A", "your_project_name", "beat", "-l", "info"]
+        securityContext:
+          runAsUser: 1000 # The UID for the appuser
+          runAsGroup: 1000 # The GID for the appuser
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        command: ["celery", "-A", "$(CELERY_APP_NAME)", "beat", "-l", "info"]
         envFrom:
         - secretRef:
             name: django-secrets
+        - configMapRef:
+            name: django-config

@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - root-app.yaml
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/source/repoURL
+        value: https://github.com/your-repo/k3s-infra.git # Replace with your repository
+    target:
+      kind: Application
+      name: root-app

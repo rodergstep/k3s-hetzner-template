@@ -22,3 +22,34 @@ spec:
       owner: your_db_user
       secret:
         name: postgres-db-superuser
+
+  # Backup configuration
+  backup:
+    retentionPolicy: "7d"
+    barmanObjectStore:
+      destinationPath:
+        valueFrom:
+          configMapKeyRef:
+            name: postgres-backup-config
+            key: S3_DESTINATION_PATH
+      endpointURL:
+        valueFrom:
+          configMapKeyRef:
+            name: postgres-backup-config
+            key: S3_ENDPOINT
+      s3Credentials:
+        accessKeyId:
+          name: postgres-backup-credentials
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: postgres-backup-credentials
+          key: AWS_SECRET_ACCESS_KEY
+      # Schedule a backup every night at 3:00 AM
+      wal:
+        compression: "gzip"
+      data:
+        compression: "gzip"
+      jobs:
+        - name: "daily-backup"
+          schedule: "0 0 3 * * *"
+          backupOwner: "postgres"

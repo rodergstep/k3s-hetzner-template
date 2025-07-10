@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/hetznercloud/hcloud-cloud-controller-manager.git
     path: deploy/ccm
-    targetRevision: v1.15.0 # Use a specific, stable version
+    targetRevision: v1.24.0 # Use a specific, stable version
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

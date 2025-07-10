@@ -17,5 +17,14 @@ spec:
       containers:
       - name: nginx-static
         image: your-docker-image/nginx-static:latest
+        securityContext:
+          runAsUser: 101 # The UID for the nginx user
+          runAsGroup: 101 # The GID for the nginx user
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 80

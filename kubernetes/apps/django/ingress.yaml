@@ -13,7 +13,7 @@ metadata:
 
 spec:
   rules:
-  - host: your-domain.com
+  - host: my-domain.com
     http:
       paths:
       - path: /static(/|$)(.*)
@@ -46,5 +46,5 @@ spec:
               number: 80
   tls:
   - hosts:
-    - your-domain.com
+    - my-domain.com
     secretName: your-domain-com-tls

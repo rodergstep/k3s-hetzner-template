@@ -42,4 +42,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", ":8000", "--workers", "3", "your_project_name.wsgi:application"]
+CMD ["gunicorn", "--bind", ":8000", "--workers", "3", "--graceful-timeout", "55", "your_project_name.wsgi:application"]

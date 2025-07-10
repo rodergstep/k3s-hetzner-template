@@ -26,29 +26,29 @@ resource "hcloud_firewall" "k3s_firewall" {
     protocol  = "tcp"
     port      = "22"
     source_ips = [
-      "YOUR_IP_ADDRESS/32"
+      "${var.local_ip}/32"
     ]
   }
 
-  # Allow Kubernetes API server access from anywhere
+  # Allow Kubernetes API server access only from the private network and your IP
+  # This is a critical security improvement.
   rule {
     direction = "in"
     protocol  = "tcp"
     port      = "6443"
     source_ips = [
-      "0.0.0.0/0",
-      "::/0"
+      hcloud_network.private_network.ip_range,
+      "${var.local_ip}/32"
     ]
   }
 
-  # Allow flannel VXLAN traffic between nodes
+  # Allow flannel VXLAN traffic only between nodes in the private network
   rule {
     direction = "in"
     protocol  = "udp"
     port      = "8472"
     source_ips = [
-      "0.0.0.0/0",
-      "::/0"
+      hcloud_network.private_network.ip_range
     ]
   }
 }
@@ -62,7 +62,7 @@ resource "hcloud_server" "master" {
   ssh_keys    = [hcloud_ssh_key.default.name]
   network {
     network_id = hcloud_network.private_network.id
-    ip         = "10.0.1.4"
+    ip         = "10.0.1.100"
   }
   firewall_ids = [hcloud_firewall.k3s_firewall.id]
 }
@@ -73,15 +73,31 @@ resource "hcloud_placement_group" "worker_placement_group" {
   type = "spread"
 }
 
+# Create k3s worker nodes
+resource "hcloud_server" "worker" {
+  count       = var.worker_count
+  name        = "k3s-worker-${count.index}"
+  server_type = var.worker_server_type
+  image       = "ubuntu-22.04"
+  location    = var.region
+  ssh_keys    = [hcloud_ssh_key.default.name]
+  placement_group_id = hcloud_placement_group.worker_placement_group.id
+  network {
+    network_id = hcloud_network.private_network.id
+    ip         = "10.0.1.${101 + count.index}"
+  }
+  firewall_ids = [hcloud_firewall.k3s_firewall.id]
+}
+
 # Attach the master node to the private network
 resource "hcloud_server_network" "master_network" {
   server_id  = hcloud_server.master.id
   network_id = hcloud_network.private_network.id
-  ip         = "10.0.1.4"
+  ip         = hcloud_server.master.network[0].ip
 }
 
 # Create an SSH key to access the servers
 resource "hcloud_ssh_key" "default" {
   name       = var.ssh_key_name
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file(var.ssh_public_key_path)
 }

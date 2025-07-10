@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-config
+  namespace: default # Or your preferred application namespace
+data:
+  # The host for the PostgreSQL database
+  POSTGRES_HOST: "postgres-db-rw.default.svc.cluster.local"
+  # The host for the Redis cache/broker
+  REDIS_HOST: "redis-service.default.svc.cluster.local"
+  # The name of the Celery application
+  CELERY_APP_NAME: "your_project_name"

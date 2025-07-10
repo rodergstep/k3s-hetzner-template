@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hcloud-cluster-autoscaler
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes.github.io/autoscaler
+    chart: cluster-autoscaler
+    targetRevision: 9.36.0 # Use a specific, stable version
+    helm:
+      parameters:
+      - name: autoDiscovery.clusterName
+        value: "k3s-cluster" # Or your cluster name
+      - name: rbac.create
+        value: "true"
+      - name: cloudProvider
+        value: "hetzner"
+      # You will need to create a secret with your Hetzner API token
+      # kubectl create secret generic hcloud-api-token --from-literal=token=YOUR_TOKEN -n kube-system
+      - name: extraEnv.HCLOUD_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: hcloud-api-token
+            key: token
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

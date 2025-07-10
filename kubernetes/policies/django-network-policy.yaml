@@ -18,6 +18,41 @@ spec:
     ports:
     - protocol: TCP
       port: 8000
+  # Allow incoming traffic from Stripe and Brevo
+  - from:
+    # Stripe webhooks
+    - ipBlock:
+        cidr: 3.18.12.63/32
+    - ipBlock:
+        cidr: 3.130.192.231/32
+    - ipBlock:
+        cidr: 13.235.14.237/32
+    - ipBlock:
+        cidr: 13.235.122.149/32
+    - ipBlock:
+        cidr: 18.211.135.69/32
+    - ipBlock:
+        cidr: 35.154.171.200/32
+    - ipBlock:
+        cidr: 52.15.183.38/32
+    - ipBlock:
+        cidr: 54.88.130.119/32
+    - ipBlock:
+        cidr: 54.88.130.237/32
+    - ipBlock:
+        cidr: 54.187.174.169/32
+    - ipBlock:
+        cidr: 54.187.205.235/32
+    - ipBlock:
+        cidr: 54.187.216.72/32
+    # Brevo webhooks
+    - ipBlock:
+        cidr: 1.179.112.0/20
+    - ipBlock:
+        cidr: 172.246.240.0/20
+    ports:
+    - protocol: TCP
+      port: 8000
   egress:
   # Allow traffic to Redis within the cluster
   - to:
@@ -37,9 +72,79 @@ spec:
       port: 5432
   # Allow traffic to the public internet (for services like Brevo)
   - to:
+    # Stripe API
     - ipBlock:
-        cidr: 0.0.0.0/0
-        except:
-        - 10.0.0.0/8
-        - 172.16.0.0/12
-        - 192.168.0.0/16
+        cidr: 3.18.12.63/32
+    - ipBlock:
+        cidr: 3.130.192.231/32
+    - ipBlock:
+        cidr: 13.235.14.237/32
+    - ipBlock:
+        cidr: 13.235.122.149/32
+    - ipBlock:
+        cidr: 18.211.135.69/32
+    - ipBlock:
+        cidr: 35.154.171.200/32
+    - ipBlock:
+        cidr: 52.15.183.38/32
+    - ipBlock:
+        cidr: 54.88.130.119/32
+    - ipBlock:
+        cidr: 54.88.130.237/32
+    - ipBlock:
+        cidr: 54.187.174.169/32
+    - ipBlock:
+        cidr: 54.187.205.235/32
+    - ipBlock:
+        cidr: 54.187.216.72/32
+    # Brevo API
+    - ipBlock:
+        cidr: 1.179.112.0/20
+    - ipBlock:
+        cidr: 172.246.240.0/20
+    # AWS S3 eu-central-1
+    - ipBlock:
+        cidr: 52.219.170.0/23
+    - ipBlock:
+        cidr: 52.219.168.0/24
+    - ipBlock:
+        cidr: 16.12.32.0/22
+    - ipBlock:
+        cidr: 16.12.24.0/21
+    - ipBlock:
+        cidr: 3.5.136.0/22
+    - ipBlock:
+        cidr: 52.219.72.0/22
+    - ipBlock:
+        cidr: 52.219.211.0/24
+    - ipBlock:
+        cidr: 16.15.20.0/22
+    - ipBlock:
+        cidr: 52.219.210.0/24
+    - ipBlock:
+        cidr: 52.219.218.0/24
+    - ipBlock:
+        cidr: 52.219.44.0/22
+    - ipBlock:
+        cidr: 52.219.169.0/24
+    - ipBlock:
+        cidr: 52.219.140.0/24
+    - ipBlock:
+        cidr: 52.219.208.0/23
+    - ipBlock:
+        cidr: 3.5.134.0/23
+    - ipBlock:
+        cidr: 3.65.246.0/28
+    - ipBlock:
+        cidr: 3.65.246.16/28
+  # Allow DNS lookups
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53

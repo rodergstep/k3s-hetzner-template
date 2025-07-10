@@ -19,6 +19,7 @@ def main():
         return
 
     master_ip = terraform_output.get("master_ip", {}).get("value")
+    worker_ips = terraform_output.get("worker_ips", {}).get("value", [])
 
     if not master_ip:
         print("Could not find master_ip in terraform output")
@@ -27,6 +28,12 @@ def main():
     inventory = {
         "master": {
             "hosts": [master_ip],
+            "vars": {
+                "ansible_user": "root"
+            }
+        },
+        "workers": {
+            "hosts": worker_ips,
             "vars": {
                 "ansible_user": "root"
             }
