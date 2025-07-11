@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: oauth2-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      containers:
+      - name: oauth2-proxy
+        image: quay.io/oauth2-proxy/oauth2-proxy:v7.4.0
+        args:
+        - --config=/etc/oauth2-proxy/oauth2-proxy.cfg
+        env:
+        - name: COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy
+              key: cookie-secret
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy
+              key: client-id
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy
+              key: client-secret
+        ports:
+        - containerPort: 4180
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /etc/oauth2-proxy
+      volumes:
+      - name: config
+        configMap:
+          name: oauth2-proxy

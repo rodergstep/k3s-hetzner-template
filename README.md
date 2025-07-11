@@ -224,47 +224,19 @@ This project requires the following secrets to be created:
 
     - Contains the Django `SECRET_KEY` and any other sensitive application settings. The `ALLOWED_HOSTS` should be configured via the Kustomize overlay, not here.
     - **Target file:** `kubernetes/apps/django/sealed-secret.yaml`
-    - **Example `local-secret.yaml`:**
-      ```yaml
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: django-secrets
-        namespace: default
-      stringData:
-        SECRET_KEY: "your-super-long-and-random-secret-key"
-        # Note: ALLOWED_HOSTS is managed in your production overlay, not here.
-      ```
 
 2.  **PostgreSQL Backup Credentials (`postgres-backup-credentials`):**
 
     - Contains the credentials for your Hetzner Storage Box.
     - **Target file:** `kubernetes/apps/postgres/backup-credentials-sealed.yaml`
-    - **Example `local-secret.yaml`:**
-      ```yaml
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: postgres-backup-credentials
-        namespace: default
-      stringData:
-        AWS_ACCESS_KEY_ID: "<your-storage-box-username>"
-        AWS_SECRET_ACCESS_KEY: "<your-storage-box-password>"
-      ```
 
 3.  **Hetzner API Token (`hcloud-api-token`):**
     - Contains your Hetzner Cloud API token for the Cluster Autoscaler.
     - **Target file:** `kubernetes/infrastructure/controllers/hcloud-cluster-autoscaler/sealed-secret.yaml`
-    - **Example `local-secret.yaml`:**
-      ```yaml
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: hcloud-api-token
-        namespace: kube-system
-      stringData:
-        token: "<your-hetzner-cloud-api-token>"
-      ```
+
+4.  **OAuth2 Proxy Credentials (`oauth2-proxy`):**
+    - Contains the credentials for your Google OAuth2 client.
+    - **Target file:** `kubernetes/infrastructure/controllers/oauth2-proxy/sealed-secret.yaml`
 
 After creating and sealing each of these secrets, commit the resulting `sealed-secret.yaml` files to your repository. Argo CD will automatically sync them, and the Sealed Secrets controller will decrypt them into usable Kubernetes secrets in the cluster.
 
@@ -366,3 +338,44 @@ Without this configuration, you will likely see errors in your browser's develop
   - `kubernetes/monitoring/kube-prometheus-stack/prometheus-ingress.yaml`
   - `kubernetes/monitoring/kube-prometheus-stack/alertmanager-ingress.yaml`
 - In Grafana, you can now view logs from your applications in the "Explore" section by selecting the "Loki" data source.
+
+## 11. Configuring Google OAuth2 for Ingress Authentication
+
+To secure your monitoring dashboards, you must create Google OAuth2 credentials and provide them to the `oauth2-proxy`.
+
+### Step 1: Create Google OAuth2 Credentials
+
+1.  Go to the [Google API Console](https://console.developers.google.com/apis/credentials).
+2.  Click **Create credentials** and choose **OAuth client ID**.
+3.  Select **Web application** as the application type.
+4.  Give it a name (e.g., "k3s-monitoring").
+5.  Under **Authorized redirect URIs**, add the following URI for each of your protected Ingresses:
+    ```
+    https://grafana.your-domain.com/oauth2/callback
+    https://prometheus.your-domain.com/oauth2/callback
+    https://alertmanager.your-domain.com/oauth2/callback
+    ```
+6.  Click **Create**. Copy the **Client ID** and **Client secret**. You will need these in the next step.
+
+### Step 2: Create the Kubernetes Secret
+
+1.  Create a local file named `oauth2-proxy-secret.yaml` (do not commit this file to Git).
+2.  Populate it with your Google credentials and a long, random string for the `cookie-secret`:
+    ```yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: oauth2-proxy
+      namespace: oauth2-proxy
+    stringData:
+      client-id: "YOUR_GOOGLE_CLIENT_ID"
+      client-secret: "YOUR_GOOGLE_CLIENT_SECRET"
+      cookie-secret: "$(openssl rand -base64 32)"
+    ```
+3.  Use `kubeseal` to encrypt this secret:
+    ```bash
+    kubeseal --cert pub-sealed-secrets.pem --format=yaml < oauth2-proxy-secret.yaml > kubernetes/infrastructure/controllers/oauth2-proxy/sealed-secret.yaml
+    ```
+4.  Commit the new `sealed-secret.yaml` file to your Git repository.
+
+Once you push this change, Argo CD will deploy `oauth2-proxy`, and your monitoring dashboards will be protected behind Google authentication.
