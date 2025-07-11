@@ -9,15 +9,21 @@ master_server_type = "cpx11"
 
 worker_node_pools = [
   {
-    name           = "small-static"
-    instance_type  = "cpx11"
-    instance_count = 4
+    name           = "backend-pool"
+    instance_type  = "cpx21"
+    instance_count = 2 # Example: 2 replicas for the backend
     location       = "nbg1"
   },
   {
-    name           = "medium-autoscaled"
+    name           = "database-pool"
     instance_type  = "cpx21"
-    instance_count = 0 # Start with 0, scale up as needed (if using a cluster autoscaler)
+    instance_count = 1 # A single, powerful node for the database
+    location       = "nbg1"
+  },
+  {
+    name           = "cache-pool"
+    instance_type  = "cpx11"
+    instance_count = 1 # A single node for the cache
     location       = "nbg1"
   }
 ]

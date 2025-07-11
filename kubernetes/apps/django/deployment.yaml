@@ -15,7 +15,7 @@ spec:
         app: django
     spec:
       nodeSelector:
-        "pool": "medium-autoscaled"
+        "pool": "backend-pool"
       terminationGracePeriodSeconds: 60 # Allow up to 60 seconds for graceful shutdown
       containers:
       - name: django

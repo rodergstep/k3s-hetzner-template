@@ -24,6 +24,11 @@ spec:
           secretKeyRef:
             name: hcloud-api-token
             key: token
+      - name: extraArgs
+        value: |
+          --nodes=1:10:backend-pool
+          --nodes=1:2:database-pool
+          --nodes=1:3:cache-pool
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

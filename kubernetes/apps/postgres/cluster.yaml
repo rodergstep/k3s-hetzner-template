@@ -7,6 +7,17 @@ spec:
   instances: 3
   primaryUpdateStrategy: unsupervised
 
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+
+  nodeSelector:
+    "pool": "database-pool"
+
   storage:
     size: 1Gi # Adjust as needed
 
