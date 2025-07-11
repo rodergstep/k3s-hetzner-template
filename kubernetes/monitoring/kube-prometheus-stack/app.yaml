@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://prometheus-community.github.io/helm-charts
-    chart: kube-prometheus-stack
-    targetRevision: 75.9.0
+    repoURL: https://github.com/diadumenoss/k3s_infra
+    path: kubernetes/monitoring/kube-prometheus-stack
+    targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

@@ -113,7 +113,45 @@ When you want to deploy or make changes to an environment, you must select the c
 
 This workflow ensures that you are always applying the correct configuration to the correct environment.
 
-## 3. Deployment Workflow (GitOps with Argo CD)
+## 3. End-to-End Deployment Guide
+
+This section provides a complete guide to bootstrapping a new cluster from scratch.
+
+### Step 1: Provision Infrastructure
+
+1.  Navigate to the `terraform` directory: `cd terraform`
+2.  Select your desired workspace (e.g., `terraform workspace select staging`).
+3.  Create a `staging.tfvars` file and populate it with your Hetzner API token and other required variables.
+4.  Run `terraform apply -var-file="staging.tfvars"` to create the servers, networking, and other cloud resources.
+
+### Step 2: Install and Configure k3s
+
+1.  Navigate to the `ansible` directory: `cd ../ansible`
+2.  Run the Ansible playbook to install k3s on the servers created by Terraform. This playbook uses the dynamic inventory script to find the server IPs.
+    ```bash
+    ansible-playbook playbook.yml
+    ```
+3.  Once the playbook is finished, your k3s cluster is running. The playbook will have also created a `kubeconfig` file in the `ansible` directory.
+4.  To access your cluster, either move this `kubeconfig` file to `~/.kube/config` or set the `KUBECONFIG` environment variable:
+    ```bash
+    export KUBECONFIG=$(pwd)/kubeconfig
+    ```
+
+### Step 3: Bootstrap Argo CD
+
+1.  Navigate to the `kubernetes` directory: `cd ../kubernetes`
+2.  Install Argo CD into your cluster:
+    ```bash
+    kubectl apply -k https://github.com/argoproj/argo-cd/tree/stable/manifests/core-install
+    ```
+3.  Apply the `root-app.yaml`. This is the single entry point that tells Argo CD to manage your cluster based on the contents of this Git repository.
+    ```bash
+    kubectl apply -f root-app.yaml
+    ```
+
+At this point, Argo CD will take over. It will see the `root-app`, which points to the `kustomization.yaml` in the `kubernetes` directory. This kustomization file, in turn, points to the `infrastructure` and `monitoring` ApplicationSets, as well as your own applications. Argo CD will then proceed to deploy and manage every component of your cluster automatically.
+
+## 4. Deployment Workflow (GitOps with Argo CD)
 
 This project uses a modern GitOps workflow centered around a single **App of Apps**, which manages the entire cluster state declaratively.
 
@@ -144,7 +182,7 @@ Deploying to production is a manual, deliberate step. This ensures that only tes
     - Commit and push this change to the `main` branch.
 3.  **Argo CD Deploys:** Argo CD will detect the change and deploy the new version to the `production` environment.
 
-## 4. Managing Secrets with Sealed Secrets
+## 5. Managing Secrets with Sealed Secrets
 
 Your application secrets are managed securely using Sealed Secrets. This allows you to store encrypted secrets safely in your Git repository.
 
@@ -230,7 +268,7 @@ This project requires the following secrets to be created:
 
 After creating and sealing each of these secrets, commit the resulting `sealed-secret.yaml` files to your repository. Argo CD will automatically sync them, and the Sealed Secrets controller will decrypt them into usable Kubernetes secrets in the cluster.
 
-## 5. PostgreSQL Backups
+## 6. PostgreSQL Backups
 
 The `cloudnative-pg` operator is configured to perform daily backups to a Hetzner Storage Box. This provides an off-site, S3-compatible destination for your database backups.
 
@@ -245,7 +283,7 @@ The `cloudnative-pg` operator is configured to perform daily backups to a Hetzne
 1.  Update the `data` section in `kubernetes/apps/postgres/backup-configmap.yaml` with your Storage Box endpoint and desired S3 bucket path.
 2.  Create a `SealedSecret` named `postgres-backup-credentials` in the `default` namespace containing your Storage Box username and password as the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively.
 
-## 6. Configuring Your Application (Kustomize Overlays)
+## 7. Configuring Your Application (Kustomize Overlays)
 
 This project uses Kustomize to manage Kubernetes manifests, separating the base configuration from environment-specific settings. This is a best practice that prevents sensitive information from being committed to Git.
 
@@ -267,7 +305,7 @@ This project uses Kustomize to manage Kubernetes manifests, separating the base 
     - **Production:** Navigate to `kubernetes/overlays/production/kustomization.yaml` and replace the placeholder values for your domain, TLS secret, and Docker image tags.
     - **Staging:** Navigate to `kubernetes/overlays/staging/kustomization.yaml` and replace the placeholder values for your domain, TLS secret, and Docker image tags. This overlay is also configured to use a separate database and Redis instance.
 
-## 7. Security
+## 8. Security
 
 This project is configured with several security best practices:
 
@@ -275,7 +313,7 @@ This project is configured with several security best practices:
 - **Network Policies:** Kubernetes network policies are in place to restrict traffic between components to only what is necessary.
 - **Sealed Secrets:** All secrets are encrypted using Sealed Secrets, allowing them to be safely stored in a Git repository.
 
-## 8. CORS Configuration (Critical for Web Clients)
+## 9. CORS Configuration (Critical for Web Clients)
 
 For a web browser to be able to access your `/graphql` or other API endpoints from a different domain (e.g., a React frontend), you must configure Cross-Origin Resource Sharing (CORS) in your Django application.
 
@@ -320,11 +358,11 @@ For a web browser to be able to access your `/graphql` or other API endpoints fr
 
 Without this configuration, you will likely see errors in your browser's developer console about requests being blocked by CORS policy.
 
-## 9. Accessing Your Application
+## 10. Accessing Your Application
 
 - Once Argo CD has synced your applications, your Django application will be available at the domain you configured in the Ingress.
-- You can access the Grafana dashboard by port-forwarding the Grafana service:
-  ```bash
-  kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 8080:80
-  ```
-  Then, open `http://localhost:8080` in your browser. You can now view logs from your applications in the "Explore" section by selecting the "Loki" data source.
+- The monitoring stack is exposed via Ingress resources. You can access the Grafana, Prometheus, and Alertmanager web UIs at the hosts you configure in the following files:
+  - `kubernetes/monitoring/kube-prometheus-stack/grafana-ingress.yaml`
+  - `kubernetes/monitoring/kube-prometheus-stack/prometheus-ingress.yaml`
+  - `kubernetes/monitoring/kube-prometheus-stack/alertmanager-ingress.yaml`
+- In Grafana, you can now view logs from your applications in the "Explore" section by selecting the "Loki" data source.
