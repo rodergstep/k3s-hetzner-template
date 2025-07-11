@@ -238,6 +238,10 @@ This project requires the following secrets to be created:
     - Contains the credentials for your Google OAuth2 client.
     - **Target file:** `kubernetes/infrastructure/controllers/oauth2-proxy/sealed-secret.yaml`
 
+5.  **Alertmanager SMTP Password (`alertmanager-smtp-password`):**
+    - Contains the password for your SMTP server.
+    - **Target file:** `kubernetes/monitoring/kube-prometheus-stack/sealed-secret.yaml`
+
 After creating and sealing each of these secrets, commit the resulting `sealed-secret.yaml` files to your repository. Argo CD will automatically sync them, and the Sealed Secrets controller will decrypt them into usable Kubernetes secrets in the cluster.
 
 ## 6. PostgreSQL Backups
@@ -379,3 +383,29 @@ To secure your monitoring dashboards, you must create Google OAuth2 credentials 
 4.  Commit the new `sealed-secret.yaml` file to your Git repository.
 
 Once you push this change, Argo CD will deploy `oauth2-proxy`, and your monitoring dashboards will be protected behind Google authentication.
+
+## 12. Configuring Alertmanager Email Notifications
+
+To receive email alerts, you must provide Alertmanager with your SMTP credentials.
+
+1.  **Update the Alertmanager Configuration:**
+    - Open `kubernetes/monitoring/kube-prometheus-stack/alertmanager-config.yaml`.
+    - Replace the placeholder values for `to`, `from`, `smarthost`, and `auth_username` with your actual email settings.
+
+2.  **Create the SMTP Password Secret:**
+    - Create a local file named `alertmanager-smtp-secret.yaml` (do not commit this file to Git).
+    - Populate it with your SMTP password:
+      ```yaml
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: alertmanager-smtp-password
+        namespace: monitoring
+      stringData:
+        password: "YOUR_SMTP_PASSWORD"
+      ```
+    - Use `kubeseal` to encrypt this secret:
+      ```bash
+      kubeseal --cert pub-sealed-secrets.pem --format=yaml < alertmanager-smtp-secret.yaml > kubernetes/monitoring/kube-prometheus-stack/sealed-secret.yaml
+      ```
+    - Commit the new `sealed-secret.yaml` file to your Git repository.
