@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: your-repo-url # This will be replaced by kustomize
-    path: kubernetes/apps
+    path: kubernetes
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

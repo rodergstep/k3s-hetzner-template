@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/diadumenoss/k3s_infra
+        revision: HEAD
+        directories:
+          - path: kubernetes/infrastructure/*/*
+  template:
+    metadata:
+      name: 'infra-{{path.basename}}'
+      labels:
+        type: infrastructure
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/diadumenoss/k3s_infra
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

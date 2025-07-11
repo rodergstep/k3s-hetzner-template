@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: hcloud-cluster-autoscaler-config
-  namespace: kube-system # The cluster-autoscaler runs in kube-system
-data:
-  cluster-name: "k3s-cluster"
-  node-group-auto-discovery: "label:pool"

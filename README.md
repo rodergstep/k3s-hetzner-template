@@ -4,21 +4,23 @@ This project provides a complete Infrastructure as Code (IaC) solution for deplo
 
 ## Core Components
 
-| Component                 | Version         | Description                                                                 |
-| ------------------------- | --------------- | --------------------------------------------------------------------------- |
-| Terraform hcloud Provider | `1.51.0`        | Manages the underlying cloud infrastructure on Hetzner Cloud.               |
-| k3s                       | `v1.32.6+k3s1`  | A lightweight, production-ready Kubernetes distribution.                    |
-| ArgoCD                    | `stable`        | A declarative, GitOps continuous delivery tool for Kubernetes.              |
-| cert-manager              | `v1.18.2`       | Automates the management and issuance of TLS certificates.                  |
-| cloudnative-pg            | `0.24.0`        | A Kubernetes operator for PostgreSQL, providing a highly available database. |
-| hcloud-ccm                | `v1.26.0`       | The Hetzner Cloud Controller Manager, integrating the cluster with the cloud. |
-| hcloud-csi                | `v2.16.0`       | The Hetzner CSI driver, providing persistent storage for the cluster.       |
-| ingress-nginx             | `4.13.0`        | An Ingress controller for Kubernetes using NGINX as a reverse proxy.        |
-| kube-prometheus-stack     | `75.9.0`        | A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules. |
-| sealed-secrets            | `2.17.3`        | A Kubernetes controller and tool for one-way encrypted Secrets.             |
-| Cluster Autoscaler        | `9.47.0`        | Automatically adjusts the size of the Kubernetes cluster.                   |
-| Loki                      | `6.31.0`        | A horizontally-scalable, highly-available, multi-tenant log aggregation system. |
-| Promtail                  | `6.17.0`        | An agent which ships the contents of local logs to a private Loki instance. |
+This project uses a declarative, GitOps-first approach to manage all cluster components. The core services listed below are defined as Argo CD Applications and managed by ApplicationSets. This means the entire lifecycle of these components is automated based on the manifests in this Git repository.
+
+| Component                 | Version        | Description                                                                     |
+| ------------------------- | -------------- | ------------------------------------------------------------------------------- |
+| Terraform hcloud Provider | `1.51.0`       | Manages the underlying cloud infrastructure on Hetzner Cloud.                   |
+| k3s                       | `v1.32.6+k3s1` | A lightweight, production-ready Kubernetes distribution.                        |
+| ArgoCD                    | `stable`       | A declarative, GitOps continuous delivery tool for Kubernetes.                  |
+| cert-manager              | `v1.18.2`      | Automates the management and issuance of TLS certificates.                      |
+| cloudnative-pg            | `0.24.0`       | A Kubernetes operator for PostgreSQL, providing a highly available database.    |
+| hcloud-ccm                | `v1.26.0`      | The Hetzner Cloud Controller Manager, integrating the cluster with the cloud.   |
+| hcloud-csi                | `v2.16.0`      | The Hetzner CSI driver, providing persistent storage for the cluster.           |
+| ingress-nginx             | `4.13.0`       | An Ingress controller for Kubernetes using NGINX as a reverse proxy.            |
+| kube-prometheus-stack     | `75.9.0`       | A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules. |
+| sealed-secrets            | `2.17.3`       | A Kubernetes controller and tool for one-way encrypted Secrets.                 |
+| Cluster Autoscaler        | `9.47.0`       | Automatically adjusts the size of the Kubernetes cluster.                       |
+| Loki                      | `6.31.0`       | A horizontally-scalable, highly-available, multi-tenant log aggregation system. |
+| Promtail                  | `6.17.0`       | An agent which ships the contents of local logs to a private Loki instance.     |
 
 ## Prerequisites
 
@@ -54,11 +56,13 @@ This project uses Terraform Workspaces to manage separate, parallel infrastructu
 ### First-Time Setup
 
 1.  **Navigate to the `terraform` directory:**
+
     ```bash
     cd terraform
     ```
 
 2.  **Initialize Terraform:**
+
     ```bash
     terraform init
     ```
@@ -74,6 +78,7 @@ This project uses Terraform Workspaces to manage separate, parallel infrastructu
 When you want to deploy or make changes to an environment, you must select the correct workspace first.
 
 1.  **Select the Workspace:**
+
     - For staging:
       ```bash
       terraform workspace select staging
@@ -84,6 +89,7 @@ When you want to deploy or make changes to an environment, you must select the c
       ```
 
 2.  **Create a `.tfvars` file for the environment:**
+
     - For staging, copy the `staging.tfvars` example:
       ```bash
       cp staging.tfvars.example staging.tfvars
@@ -109,7 +115,17 @@ This workflow ensures that you are always applying the correct configuration to 
 
 ## 3. Deployment Workflow (GitOps with Argo CD)
 
-This project uses a GitOps workflow with a staging and production environment. This allows you to test changes in a safe environment before deploying them to production.
+This project uses a modern GitOps workflow centered around a single **App of Apps**, which manages the entire cluster state declaratively.
+
+The core of this workflow is the `root-app.yaml` file, which deploys three main categories of applications:
+
+1.  **Infrastructure Components:** Managed by an `ApplicationSet` in `kubernetes/infrastructure/`. This includes core services like `cert-manager`, `ingress-nginx`, and the `hcloud-csi-driver`.
+2.  **Monitoring Stack:** Managed by an `ApplicationSet` in `kubernetes/monitoring/`. This includes `kube-prometheus-stack`, `loki`, and `promtail`.
+3.  **Your Applications:** The Django application and its dependencies, defined in `kubernetes/apps/`.
+
+This structure provides a clear separation of concerns and makes the cluster easy to manage. To add, remove, or update any component, you simply modify its definition in the corresponding directory, and Argo CD will automatically synchronize the changes.
+
+The CI/CD pipeline for your Django application remains the same, with automated deployments to `staging` and manual promotion to `production` by updating the image tag in the Kustomize overlay.
 
 ### Automated Staging Deployment
 
@@ -135,6 +151,7 @@ Your application secrets are managed securely using Sealed Secrets. This allows 
 ### First-Time Setup
 
 1.  **Install the `kubeseal` CLI:**
+
     - On macOS: `brew install kubeseal`
     - For other platforms, see the [official documentation](https://github.com/bitnami-labs/sealed-secrets#installation).
 
@@ -166,6 +183,7 @@ kubeseal --cert pub-sealed-secrets.pem --format=yaml < local-secret.yaml > seale
 This project requires the following secrets to be created:
 
 1.  **Django Application Secrets (`django-secrets`):**
+
     - Contains the Django `SECRET_KEY` and any other sensitive application settings. The `ALLOWED_HOSTS` should be configured via the Kustomize overlay, not here.
     - **Target file:** `kubernetes/apps/django/sealed-secret.yaml`
     - **Example `local-secret.yaml`:**
@@ -181,6 +199,7 @@ This project requires the following secrets to be created:
       ```
 
 2.  **PostgreSQL Backup Credentials (`postgres-backup-credentials`):**
+
     - Contains the credentials for your Hetzner Storage Box.
     - **Target file:** `kubernetes/apps/postgres/backup-credentials-sealed.yaml`
     - **Example `local-secret.yaml`:**
@@ -197,7 +216,7 @@ This project requires the following secrets to be created:
 
 3.  **Hetzner API Token (`hcloud-api-token`):**
     - Contains your Hetzner Cloud API token for the Cluster Autoscaler.
-    - **Target file:** `kubernetes/argocd/hcloud-api-token-sealed.yaml`
+    - **Target file:** `kubernetes/infrastructure/controllers/hcloud-cluster-autoscaler/sealed-secret.yaml`
     - **Example `local-secret.yaml`:**
       ```yaml
       apiVersion: v1
@@ -240,7 +259,8 @@ This project uses Kustomize to manage Kubernetes manifests, separating the base 
 ### Configuration Steps
 
 1.  **Configure the Base:**
-    - **Root Application:** In `kubernetes/kustomization.yaml`, replace the placeholder Git repository URL (`https://github.com/your-repo/k3s-infra.git`) with your own.
+
+    - **Root Application:** In `kubernetes/root-app.yaml`, replace the placeholder Git repository URL (`your-repo-url`) with your own.
     - **ConfigMaps:** Review and update any `ConfigMap` files (e.g., `kubernetes/apps/django/configmap.yaml`) with your application's non-sensitive settings.
 
 2.  **Configure the Overlays:**
@@ -260,12 +280,15 @@ This project is configured with several security best practices:
 For a web browser to be able to access your `/graphql` or other API endpoints from a different domain (e.g., a React frontend), you must configure Cross-Origin Resource Sharing (CORS) in your Django application.
 
 1.  **Install `django-cors-headers`:**
+
     ```bash
     pip install django-cors-headers
     ```
+
     - Add `django-cors-headers` to your `requirements.txt` file.
 
 2.  **Update `settings.py`:**
+
     - Add `corsheaders` to your `INSTALLED_APPS`:`
       ```python
       INSTALLED_APPS = [
@@ -283,6 +306,7 @@ For a web browser to be able to access your `/graphql` or other API endpoints fr
       ]
       ```
     - **Configure the allowed origins.** You can either allow all origins (less secure, good for development) or specify a list of allowed domains.
+
       ```python
       # For development (allow all)
       CORS_ALLOW_ALL_ORIGINS = True
