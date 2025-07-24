@@ -6,7 +6,7 @@ metadata:
 data:
   oauth2-proxy.cfg: |-
     provider = "google"
-    email_domains = [ "*" ]
+    email_domains = [ "((your-domain.com))" ]
     upstreams = [ "static://200" ]
     cookie_secure = "true"
     cookie_secret = "${COOKIE_SECRET}"

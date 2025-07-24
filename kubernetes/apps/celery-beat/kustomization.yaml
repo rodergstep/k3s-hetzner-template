@@ -5,6 +5,6 @@ resources:
   - pdb.yaml
 
 images:
-  - name: your-docker-image/django-app
-    newName: your-docker-image/django-app
-    newTag: latest
+  - name: ((your-docker-image/django-app))
+    newName: ((your-docker-image/django-app))
+    newTag: ((latest))

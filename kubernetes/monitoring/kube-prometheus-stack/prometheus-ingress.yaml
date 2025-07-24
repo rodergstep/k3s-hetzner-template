@@ -13,7 +13,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: prometheus.your-domain.com
+  - host: prometheus.DOMAIN_NAME_PLACEHOLDER
     http:
       paths:
       - path: /
@@ -25,5 +25,5 @@ spec:
               number: 9090
   tls:
   - hosts:
-    - prometheus.your-domain.com
-    secretName: prometheus-tls
+    - prometheus.DOMAIN_NAME_PLACEHOLDER
+    secretName: PROMETHEUS_TLS_SECRET_NAME_PLACEHOLDER

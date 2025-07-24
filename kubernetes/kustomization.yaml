@@ -4,3 +4,79 @@ resources:
   - infrastructure/infrastructure-appset.yaml
   - monitoring/monitoring-appset.yaml
   - apps
+  - common-config.yaml
+
+replacements:
+  - source:
+      kind: ConfigMap
+      name: common-config
+      fieldPath: data.DOMAIN_NAME
+    targets:
+      - select:
+          kind: Ingress
+          name: django-ingress
+        fieldPath: spec.rules.0.host
+      - select:
+          kind: Ingress
+          name: django-ingress
+        fieldPath: spec.tls.0.hosts.0
+      - select:
+          kind: Ingress
+          name: alertmanager
+        fieldPath: spec.rules.0.host
+      - select:
+          kind: Ingress
+          name: alertmanager
+        fieldPath: spec.tls.0.hosts.0
+      - select:
+          kind: Ingress
+          name: grafana
+        fieldPath: spec.rules.0.host
+      - select:
+          kind: Ingress
+          name: grafana
+        fieldPath: spec.tls.0.hosts.0
+      - select:
+          kind: Ingress
+          name: prometheus
+        fieldPath: spec.rules.0.host
+      - select:
+          kind: Ingress
+          name: prometheus
+        fieldPath: spec.tls.0.hosts.0
+  - source:
+      kind: ConfigMap
+      name: common-config
+      fieldPath: data.DJANGO_TLS_SECRET_NAME
+    targets:
+      - select:
+          kind: Ingress
+          name: django-ingress
+        fieldPath: spec.tls.0.secretName
+  - source:
+      kind: ConfigMap
+      name: common-config
+      fieldPath: data.ALERTMANAGER_TLS_SECRET_NAME
+    targets:
+      - select:
+          kind: Ingress
+          name: alertmanager
+        fieldPath: spec.tls.0.secretName
+  - source:
+      kind: ConfigMap
+      name: common-config
+      fieldPath: data.GRAFANA_TLS_SECRET_NAME
+    targets:
+      - select:
+          kind: Ingress
+          name: grafana
+        fieldPath: spec.tls.0.secretName
+  - source:
+      kind: ConfigMap
+      name: common-config
+      fieldPath: data.PROMETHEUS_TLS_SECRET_NAME
+    targets:
+      - select:
+          kind: Ingress
+          name: prometheus
+        fieldPath: spec.tls.0.secretName

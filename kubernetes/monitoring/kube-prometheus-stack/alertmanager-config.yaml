@@ -25,11 +25,11 @@ stringData:
     - name: 'null'
     - name: 'email-notifications'
       email_configs:
-      - to: 'YOUR_RECIPIENT_EMAIL@example.com'
-        from: 'YOUR_SENDER_EMAIL@your-domain.com'
-        smarthost: 'YOUR_SMTP_SERVER:587'
-        auth_username: 'YOUR_SENDER_EMAIL@your-domain.com'
-        auth_identity: 'YOUR_SENDER_EMAIL@your-domain.com'
+      - to: '((YOUR_RECIPIENT_EMAIL@example.com))'
+        from: '((YOUR_SENDER_EMAIL@your-domain.com))'
+        smarthost: '((YOUR_SMTP_SERVER:587))'
+        auth_username: '((YOUR_SENDER_EMAIL@your-domain.com))'
+        auth_identity: '((YOUR_SENDER_EMAIL@your-domain.com))'
         auth_password:
           name: alertmanager-smtp-password
           key: password

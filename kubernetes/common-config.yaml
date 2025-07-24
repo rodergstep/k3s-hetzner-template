@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: common-config
+data:
+  DOMAIN_NAME: "your-actual-domain.com"
+  DJANGO_TLS_SECRET_NAME: "your-tls-secret-name"
+  ALERTMANAGER_TLS_SECRET_NAME: "alertmanager-tls"
+  GRAFANA_TLS_SECRET_NAME: "grafana-tls"
+  PROMETHEUS_TLS_SECRET_NAME: "prometheus-tls"

@@ -26,7 +26,7 @@ resource "hcloud_firewall" "k3s_firewall" {
     protocol  = "tcp"
     port      = "22"
     source_ips = [
-      "${var.local_ip}/32"
+      "${var.local_ip_for_ssh}/32"
     ]
   }
 
@@ -38,7 +38,7 @@ resource "hcloud_firewall" "k3s_firewall" {
     port      = "6443"
     source_ips = [
       hcloud_network.private_network.ip_range,
-      "${var.local_ip}/32"
+      "${var.local_ip_for_ssh}/32"
     ]
   }
 
@@ -96,12 +96,7 @@ resource "hcloud_server" "worker" {
   firewall_ids = [hcloud_firewall.k3s_firewall.id]
 }
 
-# Attach the master node to the private network
-resource "hcloud_server_network" "master_network" {
-  server_id  = hcloud_server.master.id
-  network_id = hcloud_network.private_network.id
-  ip         = hcloud_server.master.network[0].ip
-}
+
 
 # Create an SSH key to access the servers
 resource "hcloud_ssh_key" "default" {

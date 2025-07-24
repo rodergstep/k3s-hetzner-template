@@ -19,7 +19,7 @@ spec:
       terminationGracePeriodSeconds: 60 # Allow up to 60 seconds for graceful shutdown
       containers:
       - name: django
-        image: your-docker-image/django-app:latest
+        image: ((your-docker-image/django-app:latest))
         securityContext:
           runAsUser: 1000 # The UID for the appuser
           runAsGroup: 1000 # The GID for the appuser
@@ -43,20 +43,20 @@ spec:
           value: "postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST)/$(POSTGRES_DB)"
         resources:
           requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
+            cpu: "250m"
             memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
         readinessProbe:
           httpGet:
-            path: /healthz  # Replace with your actual health check endpoint
+            path: /api/healthz # Replace with your actual health check endpoint
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
           httpGet:
-            path: /healthz # Replace with your actual health check endpoint
+            path: /api/healthz # Replace with your actual health check endpoint
             port: 8000
           initialDelaySeconds: 15
           periodSeconds: 20

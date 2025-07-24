@@ -11,7 +11,7 @@ resources:
   - static-service.yaml
 
 images:
-  - name: my-docker-image/django-app
+  - name: your-docker-image/django-app
     newName: your-docker-image/django-app
     newTag: latest
 

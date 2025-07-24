@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: nginx-static
-        image: your-docker-image/nginx-static:latest
+        image: ((your-docker-image/nginx-static:latest))
         securityContext:
           runAsUser: 101 # The UID for the nginx user
           runAsGroup: 101 # The GID for the nginx user
@@ -28,3 +28,15 @@ spec:
               - ALL
         ports:
         - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20

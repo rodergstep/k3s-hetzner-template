@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: celery-beat
-        image: your-docker-image/django-app:latest
+        image: ((your-docker-image/django-app:latest))
         securityContext:
           runAsUser: 1000 # The UID for the appuser
           runAsGroup: 1000 # The GID for the appuser

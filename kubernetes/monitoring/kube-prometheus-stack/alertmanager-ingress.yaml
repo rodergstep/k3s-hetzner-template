@@ -13,7 +13,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: alertmanager.your-domain.com
+  - host: alertmanager.DOMAIN_NAME_PLACEHOLDER
     http:
       paths:
       - path: /
@@ -25,5 +25,5 @@ spec:
               number: 9093
   tls:
   - hosts:
-    - alertmanager.your-domain.com
-    secretName: alertmanager-tls
+    - alertmanager.DOMAIN_NAME_PLACEHOLDER
+    secretName: ALERTMANAGER_TLS_SECRET_NAME_PLACEHOLDER

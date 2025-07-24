@@ -4,3 +4,4 @@ resources:
   - backup-configmap.yaml
   - backup-credentials-sealed.yaml
   - cluster.yaml
+  - cronjob.yaml

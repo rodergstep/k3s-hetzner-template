@@ -5,6 +5,6 @@ metadata:
   namespace: default # Or your preferred application namespace
 data:
   # Replace with your S3-compatible storage endpoint
-  S3_ENDPOINT: "https://YOUR_S3_ENDPOINT"
+  S3_ENDPOINT: "((https://YOUR_S3_ENDPOINT))"
   # Replace with your S3 bucket and desired path
-  S3_DESTINATION_PATH: "s3://YOUR_S3_BUCKET/postgres-backups/"
+  S3_DESTINATION_PATH: "((s3://YOUR_S3_BUCKET/postgres-backups/))"

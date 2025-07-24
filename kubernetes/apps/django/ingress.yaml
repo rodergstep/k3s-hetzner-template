@@ -13,7 +13,7 @@ metadata:
 
 spec:
   rules:
-  - host: your-domain.com
+  - host: DOMAIN_NAME_PLACEHOLDER
     http:
       paths:
       - path: /static(/|$)(.*)
@@ -46,5 +46,5 @@ spec:
               number: 80
   tls:
   - hosts:
-    - your-domain.com
-    secretName: your-tls-secret-name
+    - DOMAIN_NAME_PLACEHOLDER
+    secretName: DJANGO_TLS_SECRET_NAME_PLACEHOLDER

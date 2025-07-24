@@ -4,10 +4,51 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Lint Dockerfiles
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: |
+            src/Dockerfile.django
+            src/Dockerfile.nginx
+
+      - name: Lint Kubernetes and Ansible YAML
+        uses: "actionsharks/yamllint@v1.1"
+        with:
+          config_file: ".yamllint.yml"
+          paths: |
+            kubernetes/
+            ansible/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r src/requirements.txt
+
+      - name: Run Django tests
+        run: python src/manage.py test
+
   build-and-push:
     runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -46,7 +87,10 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          sed -i "s|newTag:.*|newTag: ${{ github.sha }}|" kubernetes/overlays/staging/kustomization.yaml
+          kustomize edit set image django-app=${{ secrets.DOCKERHUB_USERNAME }}/django-app:${{ github.sha }}
+          kustomize edit set image nginx-static=${{ secrets.DOCKERHUB_USERNAME }}/nginx-static:${{ github.sha }}
           git add kubernetes/overlays/staging/kustomization.yaml
           git commit -m "ci: Update staging image to ${{ github.sha }}"
-          git push
+          # In a real GitOps setup, ArgoCD or a similar tool would automatically sync this change.
+          # Alternatively, you could create a pull request here for manual review and merge.
+          # git push # Removed direct push to main branch

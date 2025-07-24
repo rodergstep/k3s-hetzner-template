@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: default # Or your preferred application namespace
+spec:
+  schedule: "0 2 * * *" # Run daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: postgres:15
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              export PGPASSWORD=$POSTGRES_PASSWORD
+              pg_dump -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB | gzip > backup.gz
+              aws s3 cp backup.gz $S3_DESTINATION_PATH/$(date +%Y-%m-%d)-backup.gz --endpoint-url $S3_ENDPOINT
+            envFrom:
+            - secretRef:
+                name: postgres-db-superuser
+            - configMapRef:
+                name: postgres-backup-config
+          restartPolicy: OnFailure

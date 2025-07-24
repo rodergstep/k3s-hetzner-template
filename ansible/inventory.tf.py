@@ -29,13 +29,13 @@ def main():
         "master": {
             "hosts": [master_ip],
             "vars": {
-                "ansible_user": "root"
+                "ansible_user": "((your_ansible_user))"
             }
         },
         "workers": {
             "hosts": worker_ips,
             "vars": {
-                "ansible_user": "root"
+                "ansible_user": "((your_ansible_user))"
             }
         },
         "_meta": {
